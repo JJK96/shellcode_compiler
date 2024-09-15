@@ -1,0 +1,74 @@
+# Title : C to Shellcode
+# Author: Print3M
+# Github: https://github.com/Print3M
+#
+#!/usr/bin/env python3
+import subprocess
+
+
+def args(arr: list[str]):
+    return " ".join(arr)
+
+
+def run_cmd(cmd: str):
+    subprocess.run(cmd, text=True, check=True, shell=True)
+    print(f"[+] {cmd}")
+
+
+LOADER_PAYLOAD_STR = ":PAYLOAD:"
+
+CC = "x86_64-w64-mingw32-gcc-win32"
+EXE_PAYLOAD_CFLAGS = args(["-fPIC", "-mconsole", "-Os", "-e start", "-nostartfiles"])
+BIN_PAYLOAD_CFLAGS = args(
+    [
+        "-Os",
+        "-fPIC",
+        "-nostdlib",
+        "-nostartfiles",
+        "-ffreestanding",
+        "-fno-exceptions",
+        "-fno-asynchronous-unwind-tables",
+        "-fno-ident",
+        "-e start",
+        "-s",
+    ]
+)
+
+if __name__ == "__main__":
+    # Compile payload C code to object file
+    run_cmd(f"{CC} -c payload.c -o bin/payload.o  {BIN_PAYLOAD_CFLAGS}")
+
+    # Produce flat binary with payload
+    run_cmd(
+        f"gcc -T assets/linker.ld bin/payload.o -o bin/payload.bin {BIN_PAYLOAD_CFLAGS}"
+    )
+
+    # Produce PE .exe with payload (WinAPI included)
+    run_cmd(f"{CC} bin/payload.o -o bin/payload.exe {EXE_PAYLOAD_CFLAGS}")
+
+    # Convert flat binary into C array of bytes
+    with open("bin/output.bin", "rb") as f:
+        bytes = bytearray(f.read())
+
+    size = len(bytes)
+    print(f"[+] Binary payload size: {size} bytes")
+
+    payload = ""
+    for byte in bytes:
+        payload += "\\" + hex(byte).lstrip("0")
+
+    # Inject payload into loader source code
+    with open("assets/loader.c", "r") as f:
+        loader = f.read()
+
+    loader = loader.replace(LOADER_PAYLOAD_STR, payload)
+
+    with open("bin/loader.c", "w") as f:
+        f.write(loader)
+
+    # Compile loader
+    run_cmd(f"{CC} bin/loader.c -o bin/loader.exe")
+
+    print("")
+    print("[+] bin/payload.exe is ready!")
+    print("[+] bin/loader.exe is ready!")
