@@ -1,8 +1,8 @@
-# Title : C to Shellcode
-# Author: Print3M
-# Github: https://github.com/Print3M
-#
 #!/usr/bin/env python3
+#
+# Name  : c-to-shellcode.py
+# Author: Print3M
+# GitHub: https://github.com/Print3M
 import subprocess
 
 
@@ -26,7 +26,6 @@ BIN_PAYLOAD_CFLAGS = args(
         "-nostdlib",
         "-nostartfiles",
         "-ffreestanding",
-        "-fno-exceptions",
         "-fno-asynchronous-unwind-tables",
         "-fno-ident",
         "-e start",
@@ -40,14 +39,14 @@ if __name__ == "__main__":
 
     # Produce flat binary with payload
     run_cmd(
-        f"gcc -T assets/linker.ld bin/payload.o -o bin/payload.bin {BIN_PAYLOAD_CFLAGS}"
+        f"ld -T assets/linker.ld bin/payload.o -o bin/payload.bin"
     )
 
     # Produce PE .exe with payload (WinAPI included)
     run_cmd(f"{CC} bin/payload.o -o bin/payload.exe {EXE_PAYLOAD_CFLAGS}")
 
     # Convert flat binary into C array of bytes
-    with open("bin/output.bin", "rb") as f:
+    with open("bin/payload.bin", "rb") as f:
         bytes = bytearray(f.read())
 
     size = len(bytes)

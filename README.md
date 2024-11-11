@@ -1,21 +1,21 @@
 # c-to-shellcode.py
 
-It's a simple Python script to easily convert C code to machine code shellcode with one command.
+It's a simple Python script to easily convert C code to shellcode (standalone binary machine code) with one command 👾🐚
 
 Dependencies:
 
 - Python 3.x
 - x86_64-w64-mingw32-gcc-win32
-- GCC
+- ld
 
 ## Usage
 
 1. Write something cool to `payload.c`
 2. Execute: `python c-to-shellcode.py`
 3. Look at the `bin/` directory:
-    - `payload.bin` - raw flat binary of compiled `payload.c` (shellcode)
-    - `payload.exe` - compiled `payload.c` as a standalone EXE
-    - `loader.exe` - compiled `loader.c` with the payload injected
+   - `payload.exe` - compiled C program (without shellcode conversion), so you can use libc and WinAPI functions directly, e.g. `printf()`. Great for debugging and fast development.
+   - `loader.exe` - loader with compiled shellcode. It really injects shellcode into memory and executes it just like real malware.
+   - `payload.bin` - raw standalone shellcode binary file.
 
 ## Caveats
 
@@ -32,9 +32,7 @@ FUNC int ExampleFunction() { ... }
 
 ```c
 int main(void) {
-
     // Stack based string
     char string[] = {'t', 'e', 's', 't', '\0'};
-
 }
 ```
