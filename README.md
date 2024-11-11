@@ -10,7 +10,6 @@ Dependencies:
 
 ![Screenshot: "c-to-shellcode.py" output](_img/img-01.png)
 
-
 ## Usage
 
 1. Write something cool to `payload.c`
@@ -27,7 +26,7 @@ Dependencies:
 - There's no external functions! No linkage to libc or win32. However, you are still able to include header files and use **macros** and **types** only. If you see linker errors during compilation then you are probably using some external functions. You have to implement everything on your own here.
 - Global variables are not available.
 - Use `ALIGN_STACK()` macro directly before any WinAPI call! The 16-bytes stack alignment is required for WinAPI functions.
-- Use `FUNC` macro before function header (except `main`):
+- Use `FUNC` macro before function header (except `start`):
 
 ```c
 FUNC int ExampleFunction() { ... } 
@@ -36,7 +35,7 @@ FUNC int ExampleFunction() { ... }
 - All strings have to be stack based:
 
 ```c
-int main(void) {
+int start(void) {
     // Stack based string
     char string[] = {'t', 'e', 's', 't', '\0'};
 }
