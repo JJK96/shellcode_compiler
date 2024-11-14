@@ -1,6 +1,6 @@
 # c-to-shellcode.py
 
-It's a simple Python script to easily convert C code to shellcode (standalone binary machine code) with one command 👾🐚
+It's a simple Python script to easily convert C code to shellcode (standalone binary machine code) with one command 👾🐚 Read more: [From C to shellcode](https://print3m.github.io/blog/from-c-to-shellcode)
 
 Dependencies:
 
