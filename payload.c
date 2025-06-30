@@ -21,8 +21,6 @@
       : "%rax" /* Clobbered register */                                        \
   );
 
-typedef UINT(WINAPI *WinExecPtr)(LPCSTR lpCmdLine, UINT uCmdShow);
-
 int my_wcscmp(const wchar_t *s1, const wchar_t *s2) {
   while (*s1 != L'\0' && *s2 != L'\0') {
     if (*s1 != *s2) {
@@ -86,11 +84,8 @@ PPEB GetPEB(void) {
   return (PPEB)value;
 }
 
-ENTRY int start(void) {
+PVOID GetFunction(wchar_t *dll_name, char *func_name) {
   PPEB peb = GetPEB();
-
-  wchar_t dll_name[] = L"C:\\WINDOWS\\System32\\KERNEL32.DLL";
-
   // Get address of kernel32.dll
   PLDR_DATA_TABLE_ENTRY kernel32_ldr = GetDllLdr(peb->Ldr, dll_name);
   PIMAGE_DOS_HEADER kernel32 = (PIMAGE_DOS_HEADER)kernel32_ldr->DllBase;
@@ -107,9 +102,7 @@ ENTRY int start(void) {
 
   // Get address of function names table
   PDWORD name_rva = (PDWORD)((PVOID)kernel32 + eat->AddressOfNames);
-
   // Get function name
-  char func_name[] = "WinExec";
   uint64_t i = 0;
 
   do {
@@ -120,7 +113,6 @@ ENTRY int start(void) {
     }
     i++;
   } while (true);
-
   // Get function ordinal
   PWORD ordinals = (PWORD)((PVOID)kernel32 + eat->AddressOfNameOrdinals);
   WORD ordinal = ordinals[i];
@@ -128,12 +120,19 @@ ENTRY int start(void) {
   // Get function pointer
   PDWORD func_rvas = (PDWORD)((PVOID)kernel32 + eat->AddressOfFunctions);
   DWORD func_rva = func_rvas[ordinal];
-  WinExecPtr winExecPtr = (WinExecPtr)((PVOID)kernel32 + func_rva);
+  PVOID funcPtr = (PVOID)kernel32 + func_rva;
+  return funcPtr;
+}
 
-  // Run WinAPI function
-  char path[] = "calc.exe";
+typedef UINT(WINAPI *WinExec_t)(LPCSTR lpCmdLine, UINT uCmdShow);
+
+UINT WINAPI WinExec(LPCSTR lpCmdLine, UINT uCmdShow) {
   ALIGN_STACK();
-  winExecPtr(path, SW_SHOWNORMAL);
+  WinExec_t _WinExec = (WinExec_t) GetFunction(L"C:\\WINDOWS\\System32\\KERNEL32.DLL", "WinExec");
+  return _WinExec(lpCmdLine, uCmdShow);
+}
 
+ENTRY int start(void) {
+  WinExec("calc.exe", SW_SHOWNORMAL);
   return 0;
 }
