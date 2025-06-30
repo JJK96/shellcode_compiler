@@ -30,6 +30,7 @@ BIN_PAYLOAD_CFLAGS = args(
         "-fno-asynchronous-unwind-tables",
         "-fno-ident",
         "-e start",
+        "-Wl,--no-seh",
         "-s",
     ]
 )

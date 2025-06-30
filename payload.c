@@ -5,7 +5,7 @@
 #include <windows.h>
 #include <winternl.h>
 
-#define FUNC __attribute__((section(".func")))
+#define ENTRY __attribute__((section(".crtentry")))
 
 #define ALIGN_STACK()                                                          \
   __asm__ __volatile__(                                                        \
@@ -23,7 +23,7 @@
 
 typedef UINT(WINAPI *WinExecPtr)(LPCSTR lpCmdLine, UINT uCmdShow);
 
-FUNC int my_wcscmp(const wchar_t *s1, const wchar_t *s2) {
+int my_wcscmp(const wchar_t *s1, const wchar_t *s2) {
   while (*s1 != L'\0' && *s2 != L'\0') {
     if (*s1 != *s2) {
       return (*s1 < *s2) ? -1 : 1;
@@ -40,7 +40,7 @@ FUNC int my_wcscmp(const wchar_t *s1, const wchar_t *s2) {
   return (*s1 == L'\0') ? -1 : 1;
 }
 
-FUNC int my_strcmp(const char *str1, const char *str2) {
+int my_strcmp(const char *str1, const char *str2) {
   while (*str1 != '\0' && *str2 != '\0') {
     if (*str1 != *str2) {
       return (*str1 < *str2) ? -1 : 1;
@@ -56,7 +56,7 @@ FUNC int my_strcmp(const char *str1, const char *str2) {
   return (*str1 == '\0') ? -1 : 1;
 }
 
-FUNC PLDR_DATA_TABLE_ENTRY GetDllLdr(PPEB_LDR_DATA ldr, wchar_t *name) {
+PLDR_DATA_TABLE_ENTRY GetDllLdr(PPEB_LDR_DATA ldr, wchar_t *name) {
   PLIST_ENTRY item = ldr->InMemoryOrderModuleList.Blink;
   PLDR_DATA_TABLE_ENTRY dll = NULL;
 
@@ -73,7 +73,7 @@ FUNC PLDR_DATA_TABLE_ENTRY GetDllLdr(PPEB_LDR_DATA ldr, wchar_t *name) {
   return NULL;
 }
 
-FUNC PPEB GetPEB(void) {
+PPEB GetPEB(void) {
   uint64_t value = 0;
 
   // Inline assembly to read from the GS segment
@@ -86,14 +86,10 @@ FUNC PPEB GetPEB(void) {
   return (PPEB)value;
 }
 
-int start(void) {
+ENTRY int start(void) {
   PPEB peb = GetPEB();
 
-  wchar_t dll_name[] = {
-      L'C', L':', L'\\', L'W', L'I', L'N', L'D', L'O', L'W',  L'S', L'\\',
-      L'S', L'y', L's',  L't', L'e', L'm', L'3', L'2', L'\\', L'K', L'E',
-      L'R', L'N', L'E',  L'L', L'3', L'2', L'.', L'D', L'L',  L'L', L'\0',
-  };
+  wchar_t dll_name[] = L"C:\\WINDOWS\\System32\\KERNEL32.DLL";
 
   // Get address of kernel32.dll
   PLDR_DATA_TABLE_ENTRY kernel32_ldr = GetDllLdr(peb->Ldr, dll_name);
@@ -113,7 +109,7 @@ int start(void) {
   PDWORD name_rva = (PDWORD)((PVOID)kernel32 + eat->AddressOfNames);
 
   // Get function name
-  char func_name[] = {'W', 'i', 'n', 'E', 'x', 'e', 'c', '\0'};
+  char func_name[] = "WinExec";
   uint64_t i = 0;
 
   do {
@@ -135,7 +131,7 @@ int start(void) {
   WinExecPtr winExecPtr = (WinExecPtr)((PVOID)kernel32 + func_rva);
 
   // Run WinAPI function
-  char path[] = {'c', 'a', 'l', 'c', '.', 'e', 'x', 'e', '\0'};
+  char path[] = "calc.exe";
   ALIGN_STACK();
   winExecPtr(path, SW_SHOWNORMAL);
 
