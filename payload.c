@@ -90,7 +90,7 @@ int start(void) {
   PPEB peb = GetPEB();
 
   wchar_t dll_name[] = {
-      L'C', L':', L'\\', L'W', L'i', L'n', L'd', L'o', L'w',  L's', L'\\',
+      L'C', L':', L'\\', L'W', L'I', L'N', L'D', L'O', L'W',  L'S', L'\\',
       L'S', L'y', L's',  L't', L'e', L'm', L'3', L'2', L'\\', L'K', L'E',
       L'R', L'N', L'E',  L'L', L'3', L'2', L'.', L'D', L'L',  L'L', L'\0',
   };
