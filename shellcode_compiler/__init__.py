@@ -59,3 +59,11 @@ def template(input, data):
         contents = contents.replace(f":{k}:", v)
 
     sys.stdout.write(contents)
+
+def hash_djb2(s):
+    hash = 5381
+    for x in s:
+        hash = (( hash << 5) + hash) + ord(x)
+        hash = hash & 0xFFFFFFFF
+    return hash
+

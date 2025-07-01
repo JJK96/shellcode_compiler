@@ -1,6 +1,6 @@
 import click
 from .config import settings
-from . import compile as _compile, template as _template, OutputFormat
+from . import compile as _compile, template as _template, OutputFormat, hash_djb2
 import logging
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
@@ -21,6 +21,7 @@ def compile(input_file, output, output_format):
 @click.argument("input_file")
 @click.argument("data", nargs=-1)
 def template(input_file, data):
+    """Perform templating on the given input file"""
     context = {}
     for x in data:
         k,v = x.split('=')
@@ -29,6 +30,17 @@ def template(input_file, data):
                 v = f.read()
         context[k] = v
     _template(input_file, context)
+
+
+@main.command()
+@click.argument("string")
+def hash(string):
+    """
+    STRING: Module name or function name to hash
+    """
+
+    h = hash_djb2(string)
+    print(hex(h))
 
 if __name__ == "__main__":
     main()
