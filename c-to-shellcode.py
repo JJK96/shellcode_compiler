@@ -31,6 +31,7 @@ BIN_PAYLOAD_CFLAGS = args(
         "-fno-ident",
         "-e start",
         "-Wl,--no-seh",
+        "-ffunction-sections",
         "-DWINBASEAPI=", #Do not import from DLLs, but statically
     ]
 )

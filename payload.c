@@ -5,9 +5,7 @@
 #include <windows.h>
 #include <winternl.h>
 
-#define ENTRY __attribute__((section(".crtentry")))
-
-ENTRY int start(void) {
+int start(void) {
   WinExec("calc.exe", SW_SHOWNORMAL);
   return 0;
 }

@@ -130,7 +130,3 @@ UINT WINAPI WinExec (LPCSTR lpCmdLine, UINT uCmdShow) {
   WinExec_t _WinExec = (WinExec_t) GetFunction(L"C:\\WINDOWS\\System32\\KERNEL32.DLL", "WinExec");
   return _WinExec(lpCmdLine, uCmdShow);
 }
-
-UINT Test() {
-  return 2;
-}
