@@ -11,7 +11,7 @@ def main():
 @main.command()
 @click.argument("input_file")
 @click.option("-o", "--output", help="Output directory", default="build")
-@click.option("-f", "--output-format", help="Format of the resulting binary", type=click.Choice(OutputFormat))
+@click.option("-f", "--output-format", help="Format of the resulting binary", type=click.Choice(OutputFormat), default=OutputFormat.BINARY)
 def compile(input_file, output, output_format):
     """Compile C code to shellcode while allowing the use of Win32 APIs without changes to the source code. In addition, strings and other data can be used without special encoding like stack strings."""
     _compile(input_file=input_file, output_dir=output, output_format=output_format)

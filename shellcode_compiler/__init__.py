@@ -1,9 +1,9 @@
 import sys
 from pathlib import Path
 from enum import Enum
-import subprocess
 from contextlib import contextmanager
 import logging
+from .util import run_cmd
 
 INPUT_FILE_NAME = "payload.c"
 assets = Path(__file__).parent.parent / "assets"
@@ -14,10 +14,6 @@ def error_handler():
         yield
     except Exception as e:
         logging.error(e)
-
-def run_cmd(cmd: str):
-    logging.info(f"[+] {cmd}")
-    subprocess.run(cmd, text=True, check=True, shell=True)
 
 class OutputFormat(Enum):
     BINARY = 1
