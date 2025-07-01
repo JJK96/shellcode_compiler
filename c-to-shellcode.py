@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
-#
-# Name  : c-to-shellcode.py
-# Author: Print3M
-# GitHub: https://github.com/Print3M
+# Based on: https://github.com/Print3M
 import subprocess
-
 
 def args(arr: list[str]):
     return " ".join(arr)
@@ -15,11 +11,9 @@ def run_cmd(cmd: str):
     print(f"[+] {cmd}")
 
 
-LOADER_PAYLOAD_STR = ":PAYLOAD:"
-
 CC = "x86_64-w64-mingw32-gcc-win32"
 LD = "x86_64-linux-gnu-ld"
-EXE_PAYLOAD_CFLAGS = args(["-fPIC", "-mconsole", "-Os", "-e start", "-nostartfiles"])
+EXE_PAYLOAD_CFLAGS = args(["-fPIC", "-mconsole", "-Os"])
 BIN_PAYLOAD_CFLAGS = args(
     [
         "-Os",
@@ -29,12 +23,29 @@ BIN_PAYLOAD_CFLAGS = args(
         "-ffreestanding",
         "-fno-asynchronous-unwind-tables",
         "-fno-ident",
-        "-e start",
         "-Wl,--no-seh",
+        "-fno-optimize-sibling-calls",
         "-ffunction-sections",
         "-DWINBASEAPI=", #Do not import from DLLs, but statically
     ]
 )
+
+def template(input, output, data):
+
+    # Inject payload into loader source code
+    with open(input, "r") as f:
+        contents = f.read()
+
+    for k,v in data.items():
+        if isinstance(v, bytearray):
+            payload = ""
+            for byte in v:
+                payload += "\\" + hex(byte).lstrip("0")
+            v = payload
+        contents = contents.replace(f":{k}:", v)
+
+    with open(output, "w") as f:
+        f.write(contents)
 
 if __name__ == "__main__":
     # Compile payload C code to object file
@@ -43,13 +54,15 @@ if __name__ == "__main__":
     exe = False
     if exe:
         # Produce PE .exe with payload (WinAPI included)
-        run_cmd(f"{CC} bin/payload.o -o bin/payload.exe {EXE_PAYLOAD_CFLAGS}")
+        run_cmd(f"{CC} -c assets/winlib.c -o bin/winlib.o {BIN_PAYLOAD_CFLAGS}")
+        run_cmd(f"{CC} bin/payload.o bin/winlib.o -o bin/payload.exe {EXE_PAYLOAD_CFLAGS}")
         print("[+] bin/payload.exe is ready!")
     else:
+        run_cmd(f"{CC} -c assets/AdjustStack.s -o bin/AdjustStack.o  {BIN_PAYLOAD_CFLAGS}")
         run_cmd(f"{CC} -c assets/winlib.c -o bin/winlib.o {BIN_PAYLOAD_CFLAGS}")
         # Produce flat binary with payload
         run_cmd(
-            f"{LD} -T assets/linker.ld bin/payload.o bin/winlib.o -o bin/payload.bin"
+            f"{LD} -T assets/linker.ld bin/payload.o bin/winlib.o bin/AdjustStack.o -o bin/payload.bin --gc-sections"
         )
 
         # Convert flat binary into C array of bytes
@@ -59,18 +72,9 @@ if __name__ == "__main__":
         size = len(bytes)
         print(f"[+] Binary payload size: {size} bytes")
 
-        payload = ""
-        for byte in bytes:
-            payload += "\\" + hex(byte).lstrip("0")
-
-        # Inject payload into loader source code
-        with open("assets/loader.c", "r") as f:
-            loader = f.read()
-
-        loader = loader.replace(LOADER_PAYLOAD_STR, payload)
-
-        with open("bin/loader.c", "w") as f:
-            f.write(loader)
+        template("assets/loader.c", "bin/loader.c", {
+            "PAYLOAD": bytes
+        })
 
         # Compile loader
         run_cmd(f"{CC} bin/loader.c -o bin/loader.exe")
