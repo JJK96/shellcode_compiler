@@ -9,8 +9,13 @@ _start:
     call    main                 # Call the payload entry point
     movq    %rsi, %rsp           # Restore original RSP
     popq    %rsi                 # Restore RSI
-	ret
+    jmp     end
 
     .global  __main
 __main:
     ret #Dummy definition of main because this is required by gcc
+
+    .global end
+    .section .end
+end:
+	ret
