@@ -1,0 +1,26 @@
+[project]
+name = "shellcode_compiler"
+version = "0.1"
+dependencies = [
+    "dynaconf",   # Config files
+    "click"       # CLI interface
+]
+authors = [
+    { name = "Jan-Jaap Korpershoek" },
+]
+description = """Compile C code to shellcode while allowing the use of Win32 APIs without changes to the source code. In addition, strings and other data can be used without special encoding like stack strings."""
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = []
+
+[project.optional-dependencies]
+Test = [
+    "pytest",     # Tests
+    "pytest-cov", # Code coverage
+]
+
+[tool.setuptools]
+packages = ["shellcode_compiler"]
+
+[project.scripts]
+shellcode_compiler = "shellcode_compiler.__main__:main"
