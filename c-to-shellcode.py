@@ -31,7 +31,7 @@ BIN_PAYLOAD_CFLAGS = args(
         "-fno-ident",
         "-e start",
         "-Wl,--no-seh",
-        "-s",
+        "-DWINBASEAPI=", #Do not import from DLLs, but statically
     ]
 )
 
@@ -45,9 +45,10 @@ if __name__ == "__main__":
         run_cmd(f"{CC} bin/payload.o -o bin/payload.exe {EXE_PAYLOAD_CFLAGS}")
         print("[+] bin/payload.exe is ready!")
     else:
+        run_cmd(f"{CC} -c assets/winlib.c -o bin/winlib.o {BIN_PAYLOAD_CFLAGS}")
         # Produce flat binary with payload
         run_cmd(
-            f"{LD} -T assets/linker.ld bin/payload.o -o bin/payload.bin"
+            f"{LD} -T assets/linker.ld bin/payload.o bin/winlib.o -o bin/payload.bin"
         )
 
         # Convert flat binary into C array of bytes
