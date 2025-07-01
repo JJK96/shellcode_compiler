@@ -6,7 +6,11 @@ _start:
     movq    %rsp, %rsi           # Save RSP
     andq    $-16, %rsp           # Align RSP to 16 bytes (0xFFFFFFFFFFFFFFF0)
     subq    $32, %rsp            # Allocate homing space (0x20 bytes)
-    call    start                # Call the payload entry point
+    call    main                 # Call the payload entry point
     movq    %rsi, %rsp           # Restore original RSP
     popq    %rsi                 # Restore RSI
 	ret
+
+    .global  __main
+__main:
+    ret #Dummy definition of main because this is required by gcc
