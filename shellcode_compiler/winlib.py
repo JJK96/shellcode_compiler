@@ -3,6 +3,55 @@ import re
 import subprocess
 from pathlib import Path
 from . import hash_djb2
+import logging
+
+class InvalidDefinition(Exception):
+    pass
+
+class Definition:
+    def __init__(self, definition_str, dll=None):
+        self.definition_str = definition_str
+        self.dll = dll
+        if not self.is_valid():
+            raise InvalidDefinition()
+        try:
+            self.parse()
+        except Exception as e:
+            logging.error(f"Could not parse: {self.definition_str}")
+            raise
+
+    def is_valid(self):
+        return self.definition_str.count('(') == 1
+
+    def parse(self):
+        types, _, args = self.definition_str.partition('(')
+        types = list(filter(lambda x:x and x != "WINBASEAPI", types.split(' ', )))
+        self.function_name = types[-1]
+        self.types = types[:-1]
+        self.literal_args = args[:-2]
+        self.variables = []
+        if self.literal_args.lower() != "void":
+            for arg in self.literal_args.split(", "):
+                if not ' ' in arg:
+                    continue
+                self.variables.append(arg.split(' ')[1].lstrip('*'))
+
+    def to_winlib_entry(self):
+        if not self.dll:
+            raise Exception("Cannot convert to winlib entry if the DLL is unknown")
+        hash_name = self.dll[:-4].upper()
+        function_hash = hash_djb2(self.function_name)
+        return f"""\
+#define HASH_{self.function_name} {hex(function_hash)}
+typedef {self.types[0]}({self.types[1]} *{self.function_name}_t) ({self.literal_args});
+{' '.join(self.types)} {self.function_name} ({self.literal_args}) {{
+    {self.function_name}_t _{self.function_name} = ({self.function_name}_t) getFunctionPtr(HASH_{hash_name}, HASH_{self.function_name});
+    return _{self.function_name}({', '.join(self.variables)});
+}}
+"""
+
+    def __str__(self):
+        return self.definition_str
 
 def lib_to_dll(lib):
     if lib.startswith('lib'):
@@ -12,33 +61,10 @@ def lib_to_dll(lib):
 def dll_to_lib(dll):
     return "lib"+dll[:-3] + "a"
 
-def definition_to_winlib_entry(dll, definition):
-    # Parse definition
-    types, _, args = definition.partition('(')
-    types = list(filter(lambda x:x and x != "WINBASEAPI", types.split(' ', )))
-    function_name = types[-1]
-    types = types[:-1]
-    literal_args = args[:-2]
-    variables = []
-    for arg in literal_args.split(", "):
-        variables.append(arg.split(' ')[1])
-
-    # Assemble winlib entry
-    hash_name = dll[:-4].upper()
-    function_hash = hash_djb2(function_name)
-    return f"""\
-#define HASH_{function_name} {hex(function_hash)}
-typedef {types[0]}({types[1]} *{function_name}_t) ({literal_args});
-{' '.join(types)} {function_name} ({literal_args}) {{
-    {function_name}_t _{function_name} = ({function_name}_t) getFunctionPtr(HASH_{hash_name}, HASH_{function_name});
-    return _{function_name}({', '.join(variables)});
-}}
-"""
-
 def get_definition(function_name):
     cmd = ["rg", "-IN", f"\\b{function_name}\\b *\\(", settings.get('mingw_headers_path')]
     p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    return p.stdout.decode().strip()
+    return Definition(p.stdout.decode().strip())
 
 def get_library(function_name):
     cmd = ["rg", "-ali", f"\\b{function_name}\\b", settings.get('mingw_lib_path')]
@@ -66,7 +92,6 @@ def get_symbols_for_dll(dll):
             continue
         yield line
     
-
 def get_definitions_for_dll(dll):
     cmd = ["rg", "-IN", "WINAPI", settings.get('mingw_headers_path')]
     regex = r'\b\(' + '|'.join(get_symbols_for_dll(dll)) + r'\)\b'
@@ -75,13 +100,17 @@ def get_definitions_for_dll(dll):
         if "virtual" in line:
             continue
         if re.search(regex, line):
-            yield line.strip()
+            try:
+                yield Definition(line.strip(), dll=dll)
+            except InvalidDefinition:
+                continue
 
 if __name__ == "__main__":
     # func = "WinExec"
     # dll = get_library(func)
     # definition = get_definition(func)
-    # print(definition_to_winlib_entry(dll, definition))
+    # definition.dll = dll
+    # print(definition.to_winlib_entry())
     for d in get_definitions_for_dll("kernel32.dll"):
-        print(d)
+        print(d.to_winlib_entry())
 
