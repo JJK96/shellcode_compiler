@@ -1,4 +1,5 @@
 from .config import settings
+import re
 import subprocess
 from pathlib import Path
 from . import hash_djb2
@@ -7,6 +8,9 @@ def lib_to_dll(lib):
     if lib.startswith('lib'):
         lib = lib[3:]
     return lib[:-2] + '.dll'
+
+def dll_to_lib(dll):
+    return "lib"+dll[:-3] + "a"
 
 def definition_to_winlib_entry(dll, definition):
     # Parse definition
@@ -51,9 +55,33 @@ def get_library(function_name):
     biggest, size = sorted(sizes.items(), key=lambda x:x[1])[0]
     return lib_to_dll(Path(biggest).name)
 
+def get_symbols_for_dll(dll):
+    lib = Path(settings.get('mingw_lib_path')) / dll_to_lib(dll)
+    cmd = ["x86_64-w64-mingw32-objdump", "-t", lib]
+    p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    for line in p.stdout.decode().splitlines():
+        # Cut to the symbol names
+        line = line[67:]
+        if not line or re.search(r"^[._\d]|\.c?$", line):
+            continue
+        yield line
+    
+
+def get_definitions_for_dll(dll):
+    cmd = ["rg", "-IN", "WINAPI", settings.get('mingw_headers_path')]
+    regex = r'\b\(' + '|'.join(get_symbols_for_dll(dll)) + r'\)\b'
+    p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    for line in p.stdout.decode().splitlines():
+        if "virtual" in line:
+            continue
+        if re.search(regex, line):
+            yield line.strip()
+
 if __name__ == "__main__":
-    func = "WinExec"
-    dll = get_library(func)
-    definition = get_definition(func)
-    print(definition_to_winlib_entry(dll, definition))
+    # func = "WinExec"
+    # dll = get_library(func)
+    # definition = get_definition(func)
+    # print(definition_to_winlib_entry(dll, definition))
+    for d in get_definitions_for_dll("kernel32.dll"):
+        print(d)
 
