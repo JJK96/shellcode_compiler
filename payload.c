@@ -7,5 +7,6 @@
 
 int main(void) {
   WinExec("calc.exe", SW_SHOWNORMAL);
+  VirtualAlloc(NULL, 100, NULL, NULL);
   return 0;
 }

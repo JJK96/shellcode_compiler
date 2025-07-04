@@ -1,9 +1,11 @@
 from .config import settings
-import re
-import subprocess
-from pathlib import Path
 from . import hash_djb2
+from functools import cache
+from pathlib import Path
 import logging
+import json
+import jinja2
+
 
 class InvalidDefinition(Exception):
     pass
@@ -12,16 +14,11 @@ class Definition:
     def __init__(self, definition_str, dll=None):
         self.definition_str = definition_str
         self.dll = dll
-        if not self.is_valid():
-            raise InvalidDefinition()
         try:
             self.parse()
         except Exception as e:
             logging.error(f"Could not parse: {self.definition_str}")
             raise
-
-    def is_valid(self):
-        return self.definition_str.count('(') == 1
 
     def parse(self):
         types, _, args = self.definition_str.partition('(')
@@ -39,7 +36,7 @@ class Definition:
     def to_winlib_entry(self):
         if not self.dll:
             raise Exception("Cannot convert to winlib entry if the DLL is unknown")
-        hash_name = self.dll[:-4].upper()
+        hash_name = self.dll[:-4]
         function_hash = hash_djb2(self.function_name)
         return f"""\
 #define HASH_{self.function_name} {hex(function_hash)}
@@ -61,56 +58,37 @@ def lib_to_dll(lib):
 def dll_to_lib(dll):
     return "lib"+dll[:-3] + "a"
 
+@cache
+def create_database():
+    res = {}
+    win32_db = Path(__file__).parent.parent / "assets" / "win32-db"
+    for dll in ["kernel32.dll", "ntdll.dll"]:
+        db = win32_db / (dll + ".json")
+        with open(db) as f:
+            data = json.load(f)
+        for function_name, definition in data.items():
+            if function_name not in res:
+                res[function_name] = Definition(definition, dll=dll)
+    return res
+
 def get_definition(function_name):
-    cmd = ["rg", "-IN", f"\\b{function_name}\\b *\\(", settings.get('mingw_headers_path')]
-    p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    return Definition(p.stdout.decode().strip())
+    db = create_database()
+    return db[function_name]
 
-def get_library(function_name):
-    cmd = ["rg", "-ali", f"\\b{function_name}\\b", settings.get('mingw_lib_path')]
-    p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if 'libkernel32.a' in p.stdout.decode():
-        return "kernel32.dll"
-    if 'libntdll.a' in p.stdout.decode():
-        return "ntdll.dll"
-    sizes = {}
-    for line in p.stdout.decode().splitlines():
-        lib = Path(line)
-        size = lib.stat().st_size
-        sizes[line] = size
-    biggest, size = sorted(sizes.items(), key=lambda x:x[1])[0]
-    return lib_to_dll(Path(biggest).name)
-
-def get_symbols_for_dll(dll):
-    lib = Path(settings.get('mingw_lib_path')) / dll_to_lib(dll)
-    cmd = ["x86_64-w64-mingw32-objdump", "-t", lib]
-    p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    for line in p.stdout.decode().splitlines():
-        # Cut to the symbol names
-        line = line[67:]
-        if not line or re.search(r"^[._\d]|\.c?$", line):
-            continue
-        yield line
-    
-def get_definitions_for_dll(dll):
-    cmd = ["rg", "-IN", "WINAPI", settings.get('mingw_headers_path')]
-    regex = r'\b\(' + '|'.join(get_symbols_for_dll(dll)) + r'\)\b'
-    p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    for line in p.stdout.decode().splitlines():
-        if "virtual" in line:
-            continue
-        if re.search(regex, line):
-            try:
-                yield Definition(line.strip(), dll=dll)
-            except InvalidDefinition:
-                continue
+def template_winlib(input, functions):
+    env = jinja2.Environment()
+    env.filters['hash'] = lambda x: hex(hash_djb2(x))
+    with open(input) as f:
+        template = env.from_string(f.read())
+    definitions = [get_definition(f) for f in functions]
+    dlls = {d.dll for d in definitions}
+    return template.render({
+        "dlls": dlls,
+        "entries": [d.to_winlib_entry() for d in definitions]
+    })
 
 if __name__ == "__main__":
-    # func = "WinExec"
-    # dll = get_library(func)
-    # definition = get_definition(func)
-    # definition.dll = dll
-    # print(definition.to_winlib_entry())
-    for d in get_definitions_for_dll("kernel32.dll"):
-        print(d.to_winlib_entry())
-
+    # print(get_definition("WinExec"))
+    # print(get_definition("VirtualAlloc"))
+    # print(get_definition("CreateProcessA"))
+    print(template_winlib("assets/winlib.j2.c", ["WinExec"]))

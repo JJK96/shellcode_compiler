@@ -27,6 +27,13 @@ payload.o: payload.c
 	# Compile payload C code to object file
 	${CC} -c $^ -o $@ ${BIN_PAYLOAD_CFLAGS}
 
+functions.txt: linker.ld payload.o AdjustStack.o
+	# Determine undefined references based on linking errors
+	${LD} -T $^ -o /dev/null --gc-sections 2>&1 | awk -F\` '/undefined reference/{print substr($$(NF), 1, length($$(NF))-1)}' > $@
+
+winlib.c: winlib.j2.c functions.txt
+	shellcode_compiler winlib $^ > $@
+
 winlib.o: winlib.c
 	${CC} -c $^ -o $@ ${BIN_PAYLOAD_CFLAGS}
 

@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 from enum import Enum
 from contextlib import contextmanager
@@ -54,7 +53,7 @@ def template(input, data):
             v = payload
         contents = contents.replace(f":{k}:", v)
 
-    sys.stdout.write(contents)
+    return contents
 
 def hash_djb2(s):
     hash = 5381

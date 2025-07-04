@@ -1,6 +1,8 @@
 import click
+import sys
 from .config import settings
 from . import compile as _compile, template as _template, OutputFormat, hash_djb2
+from .winlib import template_winlib
 import logging
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
@@ -29,7 +31,20 @@ def template(input_file, data):
             with open(v[1:], 'rb') as f:
                 v = f.read()
         context[k] = v
-    _template(input_file, context)
+    content = _template(input_file, context)
+    sys.stdout.write(content)
+
+
+@main.command()
+@click.argument("input_file")
+@click.argument("functions_file")
+def winlib(input_file, functions_file):
+    functions = []
+    with open(functions_file) as f:
+        for line in f:
+            functions.append(line[:-1])
+    content = template_winlib(input_file, functions)
+    sys.stdout.write(content)
 
 
 @main.command()
