@@ -7,6 +7,11 @@ The Win32 APIs that you use are automatically detected at link time, after which
 ## Install
 
 ```
+git clone --recurse-submodules https://github.com/jjk96/c-to-shellcode
+cd c-to-shellcode
+```
+
+```
 pip install -e .
 ```
 
