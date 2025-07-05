@@ -2,7 +2,7 @@
 
 Compile C code to shellcode while allowing the use of Win32 APIs without changes to the source code. In addition, strings and other data can be used without special encoding like stack strings.
 
-The Win32 APIs that you use are automatically detected at link time, after which a `winlib.c` file is generated containing definitions for these functions. Currently only functions in `kernel32.dll` and `ntdll.dll` are supported, because these DLLs can reasonably be expected in every process. However, if you need other DLLs, you need to load your required DLL using `LoadLibrary`, change `shellcode_compiler/winlib.py` to include functions from your required DLL and extend `win32-db` to generate a function definition database for your DLL.
+The Win32 APIs that you use are automatically detected at link time, after which a `winlib.c` file is generated containing definitions for these functions. Currently only functions in `kernel32.dll` and `ntdll.dll` are supported, because these DLLs can reasonably be expected in every process. However, if you need other DLLs, you need to load your required DLL using `LoadLibrary`, change `shellcode_compiler/winlib.py` to include functions from your required DLL and extend [win32-db](https://github.com/JJK96/win32-db) to generate a function definition database for your DLL.
 
 ## Install
 
@@ -39,3 +39,9 @@ This will compile the payload in the `build` directory. The resulting files are:
 ```
 make tests
 ```
+
+## Credits
+
+* [c-to-shellcode](https://github.com/Print3M/c-to-shellcode) for the initial idea and framework.
+* Michael Schrijver for providing me with a nice linker script that enabled me to use normal strings and data in shellcode.
+* [BOF2Shellcode](https://github.com/FalconForceTeam/BOF2shellcode) for the implementation of hash-based dynamic API resolving.
