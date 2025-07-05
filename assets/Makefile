@@ -17,7 +17,7 @@ BIN_PAYLOAD_CFLAGS = \
 loader.exe: loader.c
 	${CC} $^ -o $@
 
-loader.c: loader.template.c payload.bin
+loader.c: loader.j2.c payload.bin
 	shellcode_compiler template $< PAYLOAD=@payload.bin > $@
 
 payload.bin: linker.ld payload.o winlib.o AdjustStack.o

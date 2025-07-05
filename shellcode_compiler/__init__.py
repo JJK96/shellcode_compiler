@@ -3,6 +3,7 @@ from enum import Enum
 from contextlib import contextmanager
 import logging
 from .util import run_cmd
+import jinja2
 
 INPUT_FILE_NAME = "payload.c"
 assets = Path(__file__).parent.parent / "assets"
@@ -40,20 +41,22 @@ def compile(input_file=INPUT_FILE_NAME, output_dir="build", output_format=Output
     
 
 def template(input, data):
+    env = jinja2.Environment()
 
     # Inject payload into loader source code
     with open(input, "r") as f:
-        contents = f.read()
+        template = env.from_string(f.read())
 
+    context = {}
     for k,v in data.items():
         if isinstance(v, bytes):
             payload = ""
             for byte in v:
                 payload += "\\" + hex(byte).lstrip("0")
             v = payload
-        contents = contents.replace(f":{k}:", v)
+        context[k] = v
 
-    return contents
+    return template.render(context)
 
 def hash_djb2(s):
     hash = 5381

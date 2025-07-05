@@ -1,7 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
 
-unsigned char payload[] = ":PAYLOAD:";
+unsigned char payload[] = "{{PAYLOAD}}";
 unsigned int payload_len = sizeof(payload);
 
 void main() {
