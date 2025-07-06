@@ -1,6 +1,8 @@
 CC = x86_64-w64-mingw32-gcc-win32
 LD = x86_64-linux-gnu-ld
 EXE_PAYLOAD_CFLAGS = -fPIC -mconsole -Os
+#-D_UCRT: Do not use mingw's version of the C runtime, but use Microsoft's implementation.
+#-DWINBASEAPI: Do not import from DLLs, but statically
 BIN_PAYLOAD_CFLAGS = \
  -Os\
  -fPIC\
@@ -12,7 +14,10 @@ BIN_PAYLOAD_CFLAGS = \
  -Wl,--no-seh\
  -fno-optimize-sibling-calls\
  -ffunction-sections\
- -DWINBASEAPI= #Do not import from DLLs, but statically
+ -D_UCRT= \
+ -DWINBASEAPI=
+LD_FLAGS = \
+	--gc-sections # Included even though it doesn't seem to work
 
 loader.exe: loader.c
 	${CC} $^ -o $@
@@ -21,15 +26,15 @@ loader.c: loader.j2.c payload.bin
 	shellcode_compiler template $< PAYLOAD=@payload.bin > $@
 
 payload.bin: linker.ld payload.o winlib.o AdjustStack.o
-	${LD} -T $^ -o $@ --gc-sections
+	${LD} -T $^ -o $@ ${LD_FLAGS}
 
+# Compile payload C code to object file
 payload.o: payload.c
-	# Compile payload C code to object file
 	${CC} -c $^ -o $@ ${BIN_PAYLOAD_CFLAGS}
 
+# Determine undefined references based on linking errors
 functions.txt: linker.ld payload.o AdjustStack.o
-	# Determine undefined references based on linking errors
-	${LD} -T $^ -o /dev/null --gc-sections 2>&1 | awk -F\` '/undefined reference/{print substr($$(NF), 1, length($$(NF))-1)}' > $@
+	${LD} -T $^ -o /dev/null ${LD_FLAGS} 2>&1 | awk -F\` '/undefined reference/{print substr($$(NF), 1, length($$(NF))-1)}' > $@
 
 winlib.c: winlib.j2.c functions.txt
 	shellcode_compiler winlib $^ > $@
