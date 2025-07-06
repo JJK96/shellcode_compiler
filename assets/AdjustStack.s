@@ -2,7 +2,7 @@
     .global _start
     .section .start
 _start:
-	pushq   %rsi                 # Preserve RSI
+    pushq   %rsi                 # Preserve RSI
     movq    %rsp, %rsi           # Save RSP
     andq    $-16, %rsp           # Align RSP to 16 bytes (0xFFFFFFFFFFFFFFF0)
     subq    $32, %rsp            # Allocate homing space (0x20 bytes)
@@ -13,7 +13,7 @@ _start:
 
     .global  __main
 __main:
-    ret #Dummy definition of main because this is required by gcc
+    ret                          #Dummy definition of main because this is required by gcc
 
     .global end
     .section .end
