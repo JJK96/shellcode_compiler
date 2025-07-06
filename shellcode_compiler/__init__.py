@@ -5,6 +5,7 @@ import logging
 from .util import run_cmd
 import jinja2
 import shutil
+from .config import settings
 
 INPUT_FILE_NAME = "payload.c"
 assets = Path(__file__).parent.parent / "assets"
@@ -27,6 +28,14 @@ def compile(input_file=INPUT_FILE_NAME, output_dir="build", output_format=Output
     output_dir.mkdir(exist_ok=True)
     input_file = Path(input_file)
     main_file = (output_dir / INPUT_FILE_NAME)
+    makefile = (output_dir / "Makefile")
+    if not makefile.exists():
+        content = template(assets / "Makefile.j2", {
+            "CC": settings.get("CC"),
+            "LD": settings.get("LD")
+        })
+        with open(makefile, 'w') as f:
+            f.write(content)
     if not main_file.exists():
         main_file.symlink_to(input_file.absolute())
     for file in assets.glob("*"):

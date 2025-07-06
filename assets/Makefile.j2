@@ -1,5 +1,5 @@
-CC = x86_64-w64-mingw32-gcc-win32
-LD = x86_64-linux-gnu-ld
+CC = {{CC}}
+LD = {{LD}}
 EXE_PAYLOAD_CFLAGS = -fPIC -mconsole -Os
 #-D_UCRT: Do not use mingw's version of the C runtime, but use Microsoft's implementation.
 #-DWINBASEAPI: Do not import from DLLs, but statically
