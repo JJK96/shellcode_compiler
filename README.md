@@ -7,7 +7,7 @@ The Win32 APIs and standard library functions that you use are automatically det
 ## Install
 
 ```
-git clone --recurse-submodules https://github.com/jjk96/c-to-shellcode
+git clone --recurse-submodules https://github.com/jjk96/shellcode_compiler
 cd c-to-shellcode
 ```
 
