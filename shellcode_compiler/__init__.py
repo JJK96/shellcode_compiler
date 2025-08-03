@@ -27,7 +27,7 @@ def compile(input_file=INPUT_FILE_NAME, output_dir="build", output_format=Output
         shutil.rmtree(output_dir)
     output_dir.mkdir(exist_ok=True)
     input_file = Path(input_file)
-    main_file = (output_dir / INPUT_FILE_NAME)
+    main_file = (output_dir / input_file)
     makefile = (output_dir / "Makefile")
     if not makefile.exists():
         content = template(assets / "Makefile.j2", {

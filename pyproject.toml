@@ -3,6 +3,7 @@ name = "shellcode_compiler"
 version = "0.1"
 dependencies = [
     "dynaconf",   # Config files
+    "jinja2",
     "click"       # CLI interface
 ]
 authors = [
