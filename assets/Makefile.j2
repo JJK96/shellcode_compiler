@@ -17,6 +17,7 @@ BIN_PAYLOAD_CFLAGS = \
  -D_UCRT= \
  -DWINBASEAPI=
 LD_FLAGS = \
+	--image-base=0 \
 	--gc-sections # Included even though it doesn't seem to work
 
 loader.exe: loader.c
@@ -25,8 +26,11 @@ loader.exe: loader.c
 loader.c: loader.j2.c payload.bin
 	shellcode_compiler template $< PAYLOAD=@payload.bin > $@
 
-payload.bin: linker.ld payload.o winlib.o AdjustStack.o
+tmp.exe: linker.ld payload.o winlib.o AdjustStack.o
 	${LD} -T $^ -o $@ ${LD_FLAGS}
+
+payload.bin: tmp.exe
+	x86_64-w64-mingw32-objcopy -O binary -j.text $< $@
 
 # Compile payload C code to object file
 payload.o: payload.c
