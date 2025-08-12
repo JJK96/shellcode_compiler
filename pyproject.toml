@@ -3,7 +3,8 @@ name = "shellcode_compiler"
 version = "0.1"
 dependencies = [
     "dynaconf",   # Config files
-    "click"       # CLI interface
+    "click",      # CLI interface
+    "jinja2"
 ]
 authors = [
     { name = "Jan-Jaap Korpershoek" },
