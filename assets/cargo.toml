@@ -3,6 +3,9 @@ name = "payload"
 version = "0.1.0"
 edition = "2021"
 
+[dependencies]
+libc = "0.2"
+
 [dependencies.windows-sys]
 version = "0.60"
 features = [
