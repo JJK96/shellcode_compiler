@@ -27,8 +27,15 @@ def suffix_to_language(suffix):
         return "c"
     elif suffix == ".rs":
         return "rust"
+    elif suffix == ".zig":
+        return "zig"
     else:
         raise ValueError(f"Unsupported file extension: {suffix}")
+
+def language_to_entrypoint(language):
+    if language == "zig":
+        return "wWinMainCRTStartup"
+    return "main"
 
 def compile(input_file=INPUT_FILE_NAME, output_dir="build", output_format=OutputFormat.BINARY, rebuild=False):
     output_dir = Path(output_dir)
@@ -39,6 +46,7 @@ def compile(input_file=INPUT_FILE_NAME, output_dir="build", output_format=Output
     language = suffix_to_language(input_file.suffix)
     main_file = (output_dir / input_file)
     makefile = (output_dir / "Makefile")
+    adjust_stack_file = (output_dir / "AdjustStack.s")
     common_assets = assets/ "common"
     asset_dirs = [common_assets]
     language_assets = assets / language
@@ -51,6 +59,13 @@ def compile(input_file=INPUT_FILE_NAME, output_dir="build", output_format=Output
             "language": language
         })
         with open(makefile, 'w') as f:
+            f.write(content)
+    if not adjust_stack_file.exists():
+        content = template(common_assets / "AdjustStack.s.j2", {
+            "entry": language_to_entrypoint(language),
+            "language": language
+        })
+        with open(adjust_stack_file, 'w') as f:
             f.write(content)
     if not main_file.exists():
         main_file.symlink_to(input_file.absolute())

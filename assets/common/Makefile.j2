@@ -40,6 +40,10 @@ payload.o: payload.c
 # Compile payload Rust code to object file
 payload.o: payload.rs
 	RUSTFLAGS="-C relocation-model=pic -C linker=fake_linker.sh" cargo build --release --target x86_64-pc-windows-gnu
+{% elif language == 'zig' %}
+# Compile payload Zig code to object file
+payload.o: payload.zig
+	zig build -Dtarget=x86_64-windows -p . -Doptimize=ReleaseSmall 
 {% endif %}
 
 # Determine undefined references based on linking errors

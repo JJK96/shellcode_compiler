@@ -19,12 +19,12 @@ class Definition:
         self.dll = dll
 
     def _parse(self):
-        types, _, args = self.definition_str.partition('(')
+        types, _, args = self.definition_str.rstrip(';').partition('(')
         types = list(filter(lambda x:x and x != "WINBASEAPI", types.split(' ', )))
         self.function_name = types[-1]
         self.types = types[:-1]
         self.retval_types = [t for t in self.types if t not in ["WINAPI", "__cdecl"]]
-        self.literal_args = args[:-2]
+        self.literal_args = args[:-1]
         self.variables = []
         self.typedef_args = []
         if self.literal_args.lower() != "void":
