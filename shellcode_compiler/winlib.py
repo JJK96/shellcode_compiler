@@ -90,7 +90,7 @@ def dll_to_lib(dll):
 @cache
 def create_database():
     res = {}
-    win32_db = Path(__file__).parent.parent / "assets" / "win32-db"
+    win32_db = Path(__file__).parent.parent / "assets" / "common" / "win32-db"
     for dll in ["kernel32.dll", "ntdll.dll", "msvcrt.dll"]:
         db = win32_db / (dll + ".json")
         with open(db) as f:

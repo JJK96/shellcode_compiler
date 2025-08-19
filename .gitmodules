@@ -1,3 +1,3 @@
-[submodule "assets/win32-db"]
-	path = assets/win32-db
+[submodule "assets/common/win32-db"]
+	path = assets/common/win32-db
 	url = git@github.com:JJK96/win32-db.git

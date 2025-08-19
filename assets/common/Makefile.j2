@@ -26,15 +26,21 @@ loader.exe: loader.c
 loader.c: loader.j2.c payload.bin
 	shellcode_compiler template $< PAYLOAD=@payload.bin > $@
 
-tmp.exe: linker.ld payload.o winlib.o AdjustStack.o
+tmp.exe: linker.ld payload.o AdjustStack.o winlib.o
 	${LD} -T $^ -o $@ ${LD_FLAGS}
 
 payload.bin: tmp.exe
 	x86_64-w64-mingw32-objcopy -O binary -j.text $< $@
 
+{% if language == 'c' %}
 # Compile payload C code to object file
 payload.o: payload.c
 	${CC} -c $^ -o $@ ${BIN_PAYLOAD_CFLAGS}
+{% elif language == 'rust' %}
+# Compile payload Rust code to object file
+payload.o: payload.rs
+	RUSTFLAGS="-C relocation-model=pic -C linker=fake_linker.sh" cargo build --release --target x86_64-pc-windows-gnu
+{% endif %}
 
 # Determine undefined references based on linking errors
 functions.txt: linker.ld payload.o AdjustStack.o
@@ -51,6 +57,12 @@ AdjustStack.o: AdjustStack.s
 
 exe: payload.exe
 
+{% if language == 'c' %}
 payload.exe: winlib.o payload.o
 	${CC} $^ -o $@ ${EXE_PAYLOAD_CFLAGS}
+{% elif language == 'rust' %}
+payload.exe: payload.rs
+	cargo build --profile dev --target x86_64-pc-windows-gnu
+	cp target/x86_64-pc-windows-gnu/debug/payload.exe ./
+{% endif %}
 

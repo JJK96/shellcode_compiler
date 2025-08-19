@@ -6,6 +6,7 @@ from .util import run_cmd
 import jinja2
 import shutil
 from .config import settings
+from itertools import chain
 
 INPUT_FILE_NAME = "payload.c"
 assets = Path(__file__).parent.parent / "assets"
@@ -21,24 +22,39 @@ class OutputFormat(Enum):
     BINARY = 1
     PE = 2
 
+def suffix_to_language(suffix):
+    if suffix == ".c":
+        return "c"
+    elif suffix == ".rs":
+        return "rust"
+    else:
+        raise ValueError(f"Unsupported file extension: {suffix}")
+
 def compile(input_file=INPUT_FILE_NAME, output_dir="build", output_format=OutputFormat.BINARY, rebuild=False):
     output_dir = Path(output_dir)
     if rebuild and output_dir.exists():
         shutil.rmtree(output_dir)
     output_dir.mkdir(exist_ok=True)
     input_file = Path(input_file)
-    main_file = (output_dir / INPUT_FILE_NAME)
+    language = suffix_to_language(input_file.suffix)
+    main_file = (output_dir / input_file)
     makefile = (output_dir / "Makefile")
+    common_assets = assets/ "common"
+    asset_dirs = [common_assets]
+    language_assets = assets / language
+    if language_assets.exists():
+        asset_dirs.append(language_assets)
     if not makefile.exists():
-        content = template(assets / "Makefile.j2", {
+        content = template(common_assets / "Makefile.j2", {
             "CC": settings.get("CC"),
-            "LD": settings.get("LD")
+            "LD": settings.get("LD"),
+            "language": language
         })
         with open(makefile, 'w') as f:
             f.write(content)
     if not main_file.exists():
         main_file.symlink_to(input_file.absolute())
-    for file in assets.glob("*"):
+    for file in chain(*(d.glob("*") for d in asset_dirs)):
         output_file = (output_dir / file.name)
         if not output_file.exists():
             output_file.symlink_to(file.absolute())
