@@ -62,7 +62,7 @@ payload.exe: winlib.o payload.o
 	${CC} $^ -o $@ ${EXE_PAYLOAD_CFLAGS}
 {% elif language == 'rust' %}
 payload.exe: payload.rs
-	cargo build --profile dev --target x86_64-pc-windows-gnu
-	cp target/x86_64-pc-windows-gnu/debug/payload.exe ./
+	cargo build --release --target x86_64-pc-windows-gnu
+	cp target/x86_64-pc-windows-gnu/release/payload.exe ./
 {% endif %}
 
