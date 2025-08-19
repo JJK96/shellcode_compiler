@@ -8,7 +8,7 @@ The Win32 APIs and standard library functions that you use are automatically det
 
 ```
 git clone --recurse-submodules https://github.com/jjk96/shellcode_compiler
-cd c-to-shellcode
+cd shellcode_compiler
 ```
 
 ```
@@ -34,6 +34,23 @@ This will compile the payload in the `build` directory. The resulting files are:
 * `payload.bin`: The shellcode.
 * `loader.exe`: A trivial loader to test the shellcode.
 
+### Output format
+
+The output format is shellcode by default. You can also change the format to PE to generate a PE file that can be executed directly.
+
+```
+shellcode_compiler compile -f PE payload.c
+```
+
+### Rust
+
+Ensure that you have a Rust toolchain installed. You can use `rustup` to install the toolchain.
+
+```
+shellcode_compiler compile payload.rs
+shellcode_compiler compile -f PE payload.rs
+```
+
 ## Caveats
 
 I have to be honest, I have not tested every edge-case and I might have taken some shortcuts here and there. Below follows a list of caveats that I can think of at the moment:
@@ -43,6 +60,7 @@ I have to be honest, I have not tested every edge-case and I might have taken so
 * I only tested a very limited set of Windows API and Standard library functions (`WinExec`, `CreateProcessA`, `ExpandEnvironmentStringsA`, `VirtualAlloc`, `VirtualProtect` and `printf`). I'm assuming my code works for any other Windows API function, but I might be wrong. If you encounter anything, it should not be too hard to fix.
 * The library uses Windows API functions in a trivial way. For more OPSEC, you probably want to use indirect syscalls or something else. It should not be hard to fork and modify the project to support this.
 * I use `Mingw` headers and libraries. These might have subtle differences with Windows SDK headers. If you run into such issues, you can adapt the [win32-db] project to use the Windows SDK headers or generate similar JSON output yourself.
+* For compiling rust, you have to ensure that you don't use the standard library, because it will generate linking errors. I did not include the `#![no_std]` attribute because that requires manually implementing a `panic` handler, which results in extra boiler-plate code.
 
 ## Tests
 

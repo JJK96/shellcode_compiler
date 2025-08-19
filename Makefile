@@ -10,4 +10,4 @@ tests:
 	python -m pytest tests --cov=./shellcode_compiler
 
 ubuntu_deps:
-	sudo apt install mingw-w64 gcc-x86-64-linux-gnu
+	sudo apt install mingw-w64
