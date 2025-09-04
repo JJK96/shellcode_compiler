@@ -24,7 +24,7 @@ loader.exe: loader.c
 	${CC} $^ -o $@
 
 loader.c: loader.j2.c payload.bin
-	shellcode_compiler template $< PAYLOAD=@payload.bin > $@
+	piclin template $< PAYLOAD=@payload.bin > $@
 
 tmp.exe: linker.ld payload.o AdjustStack.o winlib.o
 	${LD} -T $^ -o $@ ${LD_FLAGS}
@@ -51,7 +51,7 @@ functions.txt: linker.ld payload.o AdjustStack.o
 	${LD} -T $^ -o /dev/null ${LD_FLAGS} 2>&1 | awk -F\` '/undefined reference/{print substr($$(NF), 1, length($$(NF))-1)}' > $@
 
 winlib.c: winlib.j2.c functions.txt
-	shellcode_compiler winlib $^ > $@
+	piclin winlib $^ > $@
 
 winlib.o: winlib.c
 	${CC} -c $^ -o $@ ${BIN_PAYLOAD_CFLAGS}

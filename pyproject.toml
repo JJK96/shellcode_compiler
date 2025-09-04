@@ -1,5 +1,5 @@
 [project]
-name = "shellcode_compiler"
+name = "PIClin"
 version = "0.1"
 dependencies = [
     "dynaconf",   # Config files
@@ -21,7 +21,7 @@ Test = [
 ]
 
 [tool.setuptools]
-packages = ["shellcode_compiler"]
+packages = ["piclin"]
 
 [project.scripts]
-shellcode_compiler = "shellcode_compiler.__main__:main"
+piclin= "piclin.__main__:main"
